@@ -6,12 +6,13 @@ final class GameScene: SKScene {
     
     // MARK: - Game Constants
     private var gridSize: CGFloat = 32
-    private let playerSpeed: CGFloat = 150
+    private let basePlayerSpeed: CGFloat = 150
+    private var currentPlayerSpeed: CGFloat = 150
     private var enemySpeedMultiplier: CGFloat = 0.5  // Enemy speed relative to player (starts at 20% speed)
     private let debugMode = true // Set to false to disable debug features
     
     private var enemySpeed: CGFloat {
-        return playerSpeed * enemySpeedMultiplier
+        return basePlayerSpeed * enemySpeedMultiplier
     }
     
     // Grid dimensions (calculated in didMove)
@@ -561,7 +562,7 @@ final class GameScene: SKScene {
             
             let targetWorldPos = getWorldPosition(targetGridPos)
             // Calculate duration based on player speed and grid size
-            let moveDuration = Double(gridSize) / Double(playerSpeed)
+            let moveDuration = Double(gridSize) / Double(currentPlayerSpeed)
             let moveAction = SKAction.move(to: targetWorldPos, duration: moveDuration)
             moveAction.timingMode = .linear
             
@@ -988,6 +989,47 @@ final class GameScene: SKScene {
                position.y >= gridSize && position.y < size.height - gridSize
     }
     
+    private func slowPlayerForDigging() {
+        // Cancel any existing slowdown action to prevent overlapping
+        self.removeAction(forKey: "diggingSlowdown")
+        
+        // Ensure we start from a clean state
+        currentPlayerSpeed = basePlayerSpeed
+        
+        // Create the slowdown action sequence
+        let slowAction = SKAction.run { 
+            self.currentPlayerSpeed = self.basePlayerSpeed * 0.5
+            // Add visual indicator - change player color to show slowdown
+            self.player.color = SKColor(red: 0.7, green: 0.7, blue: 1.0, alpha: 1.0)
+            
+            // Restart player movement with new speed if they're currently moving
+            if self.player.hasActions() && self.currentDirection != .zero {
+                self.player.removeAllActions()
+                let currentGridPos = self.getGridPosition(self.player.position)
+                self.startPlayerMovement(from: currentGridPos)
+            }
+        }
+        let waitAction = SKAction.wait(forDuration: 0.5)
+        let normalAction = SKAction.run { 
+            self.currentPlayerSpeed = self.basePlayerSpeed
+            // Restore normal player color
+            self.player.color = SKColor(red: 1.0, green: 0.9, blue: 0.0, alpha: 1.0)
+            
+            // Restart player movement with normal speed if they're currently moving
+            if self.player.hasActions() && self.currentDirection != .zero {
+                self.player.removeAllActions()
+                let currentGridPos = self.getGridPosition(self.player.position)
+                self.startPlayerMovement(from: currentGridPos)
+            }
+            
+            print("DEBUG: Player speed reset to normal: \(self.currentPlayerSpeed)")
+        }
+        let sequence = SKAction.sequence([slowAction, waitAction, normalAction])
+        
+        // Run it on the scene itself, not the player
+        self.run(sequence, withKey: "diggingSlowdown")
+    }
+    
     private func digWall(at position: CGPoint) {
         // Convert world position to grid position
         let gridPosition = getGridPosition(position)
@@ -1014,6 +1056,9 @@ final class GameScene: SKScene {
                 let fadeOut = SKAction.fadeOut(withDuration: 0.5)
                 let remove = SKAction.removeFromParent()
                 digEffect.run(SKAction.sequence([fadeOut, remove]))
+                
+                // Slow down player for digging
+                slowPlayerForDigging()
                 
                 // Award points for digging a wall
                 score += 10
