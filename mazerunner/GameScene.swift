@@ -50,6 +50,7 @@ final class GameScene: SKScene {
     
     enum GameState {
         case playing
+        case paused
         case gameOver
         case levelComplete
     }
@@ -476,6 +477,7 @@ final class GameScene: SKScene {
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard gameState == .playing else { return }
         currentDirection = .zero
     }
     
@@ -1081,6 +1083,9 @@ final class GameScene: SKScene {
         lives -= 1
         updateUI()
         
+        // Play failure sound
+        AudioServicesPlaySystemSound(1103) // "Basso" system sound - low pitch failure sound
+        
         // Add hit effect
         let hitEffect = SKSpriteNode(color: SKColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 0.5), size: player.size)
         hitEffect.position = player.position
@@ -1093,33 +1098,51 @@ final class GameScene: SKScene {
         if lives <= 0 {
             gameOver()
         } else {
-            // Reset player position to bottom center of game area (column 6, row 25)
-            let playerGridPos = CGPoint(x: 6, y: 25)
-            let playerWorldPos = getWorldPosition(playerGridPos)
-            player.position = playerWorldPos
+            // Temporarily pause the game to prevent multiple collisions
+            gameState = .paused
             
-            // Reset enemies to their starting positions
-            let enemyGridPositions = [
-                CGPoint(x: 2, y: 2),      // Left side
-                CGPoint(x: 6, y: 2),      // Center
-                CGPoint(x: 9, y: 2)       // Right side
-            ]
-            
-            for (index, enemy) in enemies.enumerated() {
-                // Stop current movement
+            // Stop all movement immediately
+            player.removeAllActions()
+            for enemy in enemies {
                 enemy.sprite.removeAllActions()
+            }
+            
+            // Reset player direction to prevent continued movement after respawn
+            currentDirection = .zero
+            
+            // Pause for 1 second before resetting positions
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                // Reset player position to bottom center of game area (column 6, row 25)
+                let playerGridPos = CGPoint(x: 6, y: 25)
+                let playerWorldPos = self.getWorldPosition(playerGridPos)
+                self.player.position = playerWorldPos
                 
-                // Reset to starting position
-                let gridPos = enemyGridPositions[index]
-                let worldPos = getWorldPosition(gridPos)
-                enemy.sprite.position = worldPos
+                // Reset enemies to their starting positions
+                let enemyGridPositions = [
+                    CGPoint(x: 2, y: 2),      // Left side
+                    CGPoint(x: 6, y: 2),      // Center
+                    CGPoint(x: 9, y: 2)       // Right side
+                ]
                 
-                // Reset enemy state
-                enemy.lastGridPosition = CGPoint.zero
-                enemy.direction = .down // Default direction
+                for (index, enemy) in self.enemies.enumerated() {
+                    // Stop current movement
+                    enemy.sprite.removeAllActions()
+                    
+                    // Reset to starting position
+                    let gridPos = enemyGridPositions[index]
+                    let worldPos = self.getWorldPosition(gridPos)
+                    enemy.sprite.position = worldPos
+                    
+                    // Reset enemy state
+                    enemy.lastGridPosition = CGPoint.zero
+                    enemy.direction = .down // Default direction
+                    
+                    // Restart movement from new position
+                    self.startEnemyMovement(enemy: enemy, from: gridPos)
+                }
                 
-                // Restart movement from new position
-                startEnemyMovement(enemy: enemy, from: gridPos)
+                // Resume gameplay
+                self.gameState = .playing
             }
         }
     }
