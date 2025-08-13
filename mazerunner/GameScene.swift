@@ -1,6 +1,7 @@
 import SpriteKit
 import GameplayKit
 import AudioToolbox
+import AVFoundation
 
 final class GameScene: SKScene {
     
@@ -43,6 +44,12 @@ final class GameScene: SKScene {
     private var gameOverLabel: SKLabelNode!
     private var debugDirectionLabel: SKLabelNode! // Debug label for enemy direction
     
+    // MARK: - Audio
+    private var cherrySoundPlayer: SoundPlayer!
+    private var deathSoundPlayer: SoundPlayer!
+    private var startSoundPlayer: SoundPlayer!
+    private var wallSoundPlayer: SoundPlayer!
+    
     // MARK: - Input
     private var currentDirection: CGVector = .zero
     private var lastEnemyUpdateTime: TimeInterval = 0
@@ -62,6 +69,12 @@ final class GameScene: SKScene {
     
     private func setupGame() {
         backgroundColor = SKColor(red: 0.1, green: 0.05, blue: 0.2, alpha: 1.0)
+        
+        // Initialize audio
+        cherrySoundPlayer = SoundPlayer(fileName: "cherry")
+        deathSoundPlayer = SoundPlayer(fileName: "death")
+        startSoundPlayer = SoundPlayer(fileName: "start")
+        wallSoundPlayer = SoundPlayer(fileName: "wall")
         
         // Set up a 12x27 grid with square cells
         gridWidth = 12
@@ -89,6 +102,9 @@ final class GameScene: SKScene {
         spawnPlayer()
         spawnEnemies()
         updateUI() // Initialize UI labels
+        
+        // Play start sound
+        startSoundPlayer.play(volume: 1.0)
     }
     
     private func setupUI() {
@@ -1057,6 +1073,9 @@ final class GameScene: SKScene {
                 let remove = SKAction.removeFromParent()
                 digEffect.run(SKAction.sequence([fadeOut, remove]))
                 
+                // Play wall digging sound
+                wallSoundPlayer.play(volume: 0.2)
+                
                 // Slow down player for digging
                 slowPlayerForDigging()
                 
@@ -1084,8 +1103,8 @@ final class GameScene: SKScene {
                 cherry.removeFromParent()
                 cherriesCollected += 1
                 score += 100
-                // Play ding sound on cherry collection (crisper tone)
-                AudioServicesPlaySystemSound(1105) // "Tock" system sound
+                // Play cherry collection sound
+                cherrySoundPlayer.play(volume: 0.8)
                 updateUI()
                 
                 // Add collection effect
@@ -1128,8 +1147,8 @@ final class GameScene: SKScene {
         lives -= 1
         updateUI()
         
-        // Play failure sound
-        AudioServicesPlaySystemSound(1103) // "Basso" system sound - low pitch failure sound
+        // Play death sound
+        deathSoundPlayer.play(volume: 0.9)
         
         // Add hit effect
         let hitEffect = SKSpriteNode(color: SKColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 0.5), size: player.size)
@@ -1288,6 +1307,9 @@ final class GameScene: SKScene {
         spawnEnemies()
         spawnCherries()
         updateUI()
+        
+        // Play start sound
+        startSoundPlayer.play(volume: 1.0)
     }
     
     private func updateUI() {
