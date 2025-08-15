@@ -13,6 +13,9 @@ final class GameManager {
     /// The game state manager for score, lives, and game state
     private let gameStateManager: GameStateManager
     
+    /// The movement system for handling player and enemy movement
+    private var movementSystem: MovementSystem?
+    
     /// The current player
     private var player: Player?
     
@@ -41,6 +44,9 @@ final class GameManager {
         self.gridSystem = gridSystem
         self.gameStateManager = gameStateManager
         self.gameGrid = GameGrid(gridSystem: gridSystem)
+        
+        // Initialize movement system
+        self.movementSystem = MovementSystem(gridSystem: gridSystem, gameGrid: gameGrid, gameStateManager: gameStateManager, gameManager: self)
     }
     
     // MARK: - Game Lifecycle Management
@@ -62,6 +68,9 @@ final class GameManager {
         spawnPlayer()
         spawnEnemies()
         spawnCherries()
+        
+        // Start movement system
+        movementSystem?.startMovementSystem()
         
         // Set game as active
         isGameActive = true
@@ -88,6 +97,9 @@ final class GameManager {
         // Reset player and enemies to spawn positions
         resetPlayerAndEnemies()
         
+        // Start movement system
+        movementSystem?.startMovementSystem()
+        
         // Set game as active
         isGameActive = true
         
@@ -103,8 +115,7 @@ final class GameManager {
         isGameActive = false
         
         // Stop all movement
-        player?.stopMovement()
-        enemies.forEach { $0.stopMovement() }
+        movementSystem?.pause()
     }
     
     /// Resume the game
@@ -114,6 +125,9 @@ final class GameManager {
         print("GameManager: Resuming game")
         gameStateManager.changeState(to: .playing)
         isGameActive = true
+        
+        // Resume movement system
+        movementSystem?.resume()
     }
     
     /// End the game
@@ -123,8 +137,7 @@ final class GameManager {
         isGameActive = false
         
         // Stop all movement
-        player?.stopMovement()
-        enemies.forEach { $0.stopMovement() }
+        movementSystem?.stopMovementSystem()
     }
     
     /// Restart the current level
@@ -269,27 +282,46 @@ final class GameManager {
         }
     }
     
-    /// Create internal maze walls
+    /// Create internal maze walls using the Maze generator
     private func createInternalWalls() {
-        // For now, create some random walls
-        // This will be enhanced when we integrate with MazeGenerator
-        for x in 1...10 {
-            for y in 2...25 {
-                // Skip player spawn area
-                if x == 6 && y == 25 { continue }
-                // Skip enemy spawn areas
-                if y == 2 && (x == 2 || x == 6 || x == 9) { continue }
+        // Generate maze using the legacy Maze class
+        // The maze generator returns a 2D array where true = wall, false = open path
+        // Dimensions: cols = 10 (game columns 1..10), rows = 22 (mapped to world rows 3..24)
+        let mazeData = Maze.generate(cols: 10, rows: 22)
+        
+        // Convert maze data to walls
+        // Note: mazeData[row][col] where row 0 = world row 3, col 0 = world col 1
+        for row in 0..<mazeData.count {
+            for col in 0..<mazeData[row].count {
+                let isWall = mazeData[row][col]
                 
-                if Double.random(in: 0...1) < 0.25 {
-                    createRegularWall(at: CGPoint(x: CGFloat(x), y: CGFloat(y)))
+                if isWall {
+                    // Convert maze coordinates to world coordinates
+                    let worldRow = row + 3  // maze row 0 = world row 3
+                    let worldCol = col + 1  // maze col 0 = world col 1
+                    
+                    // Skip if out of bounds
+                    guard worldRow >= 2 && worldRow <= 25 && worldCol >= 1 && worldCol <= 10 else { continue }
+                    
+                    // Skip player spawn area
+                    if worldCol == 6 && worldRow == 25 { continue }
+                    
+                    // Skip enemy spawn areas
+                    if worldRow == 2 && (worldCol == 2 || worldCol == 6 || worldCol == 9) { continue }
+                    
+                    // Create wall at this position
+                    let gridPosition = CGPoint(x: CGFloat(worldCol), y: CGFloat(worldRow))
+                    createRegularWall(at: gridPosition)
                 }
             }
         }
+        
+        print("GameManager: Generated maze with \(walls.count) internal walls")
     }
     
     /// Create a border wall at the specified grid position
     private func createBorderWall(at gridPosition: CGPoint) {
-        let wall = Wall(wallType: .border, gridSystem: gridSystem, gameStateManager: gameStateManager, gridPosition: gridPosition)
+        let wall = Wall(wallType: .border, gridSystem: gridSystem, gameStateManager: gameStateManager, gridPosition: gridPosition, movementSystem: movementSystem)
         borderWalls.append(wall)
         
         // Add to scene
@@ -301,7 +333,7 @@ final class GameManager {
     
     /// Create a regular wall at the specified grid position
     private func createRegularWall(at gridPosition: CGPoint) {
-        let wall = Wall(wallType: .regular, gridSystem: gridSystem, gameStateManager: gameStateManager, gridPosition: gridPosition)
+        let wall = Wall(wallType: .regular, gridSystem: gridSystem, gameStateManager: gameStateManager, gridPosition: gridPosition, movementSystem: movementSystem)
         walls.append(wall)
         
         // Add to scene
@@ -475,6 +507,11 @@ final class GameManager {
     /// Get the grid system
     var gridSystemAccess: GridSystem {
         return gridSystem
+    }
+    
+    /// Get the movement system
+    var movementSystemAccess: MovementSystem? {
+        return movementSystem
     }
     
     /// Get the game state manager

@@ -2,13 +2,14 @@ import SpriteKit
 
 /// System responsible for handling all movement logic in the game
 /// Manages player movement, enemy AI movement, and collision detection
-final class MovementSystem {
+final class MovementSystem: GameStateManagerDelegate {
     
     // MARK: - Properties
     
     private let gridSystem: GridSystem
     private let gameGrid: GameGrid
     private let gameStateManager: GameStateManager
+    private weak var gameManager: GameManager?
     
     // MARK: - Movement State
     
@@ -19,18 +20,34 @@ final class MovementSystem {
     private var isPlayerMoving: Bool = false
     
     /// Movement speed for different object types
-    private let playerMovementSpeed: CGFloat = 2.0
-    private let enemyMovementSpeed: CGFloat = 1.5
+    private let basePlayerMovementSpeed: CGFloat = 2.0
+    private let baseEnemyMovementSpeed: CGFloat = 1.5
+    
+    /// Current player movement speed (can be modified by slowdown effects)
+    private var currentPlayerMovementSpeed: CGFloat = 2.0
+    
+    /// Player slowdown state
+    private var isPlayerSlowed: Bool = false
+    private var slowdownTimer: Timer?
     
     /// Movement timer for continuous movement
     private var movementTimer: Timer?
     
+    /// Enemy movement timing
+    private var enemyMovementTimer: Timer?
+    private var lastEnemyUpdateTime: TimeInterval = 0
+    private let enemyUpdateCooldown: TimeInterval = 0.1
+    
     // MARK: - Initialization
     
-    init(gridSystem: GridSystem, gameGrid: GameGrid, gameStateManager: GameStateManager) {
+    init(gridSystem: GridSystem, gameGrid: GameGrid, gameStateManager: GameStateManager, gameManager: GameManager? = nil) {
         self.gridSystem = gridSystem
         self.gameGrid = gameGrid
         self.gameStateManager = gameStateManager
+        self.gameManager = gameManager
+        
+        // Set up delegate to receive speed change notifications
+        gameStateManager.delegate = self
     }
     
     // MARK: - Player Movement
@@ -273,7 +290,7 @@ final class MovementSystem {
     private func startMovementTimer() {
         stopMovementTimer()
         
-        let interval = 1.0 / playerMovementSpeed
+        let interval = 1.0 / currentPlayerMovementSpeed
         movementTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.movePlayer()
         }
@@ -283,6 +300,125 @@ final class MovementSystem {
     private func stopMovementTimer() {
         movementTimer?.invalidate()
         movementTimer = nil
+    }
+    
+    // MARK: - Player Slowdown
+    
+    /// Slow down the player for digging (50% speed for 0.5 seconds)
+    func slowPlayerForDigging() {
+        // Cancel any existing slowdown to prevent overlapping
+        stopSlowdownTimer()
+        
+        // Ensure we start from base speed
+        currentPlayerMovementSpeed = basePlayerMovementSpeed
+        
+        // Apply slowdown effect
+        applySlowdownEffect()
+        
+        // Start slowdown timer
+        startSlowdownTimer()
+    }
+    
+    /// Apply the slowdown effect (50% speed and visual change)
+    private func applySlowdownEffect() {
+        isPlayerSlowed = true
+        currentPlayerMovementSpeed = basePlayerMovementSpeed * 0.5
+        
+        // Update movement timer with new speed
+        if isPlayerMoving {
+            startMovementTimer()
+        }
+        
+        // Apply visual effect to player
+        applySlowdownVisualEffect()
+        
+        print("DEBUG: Player slowed down to \(currentPlayerMovementSpeed) speed")
+    }
+    
+    /// Remove the slowdown effect (restore normal speed and visual)
+    private func removeSlowdownEffect() {
+        isPlayerSlowed = false
+        currentPlayerMovementSpeed = basePlayerMovementSpeed
+        
+        // Update movement timer with normal speed
+        if isPlayerMoving {
+            startMovementTimer()
+        }
+        
+        // Remove visual effect from player
+        removeSlowdownVisualEffect()
+        
+        print("DEBUG: Player speed reset to normal: \(currentPlayerMovementSpeed)")
+    }
+    
+    /// Apply visual slowdown effect to player
+    private func applySlowdownVisualEffect() {
+        guard let player = getCurrentPlayer() else { return }
+        player.showSlowdownEffect()
+    }
+    
+    /// Remove visual slowdown effect from player
+    private func removeSlowdownVisualEffect() {
+        guard let player = getCurrentPlayer() else { return }
+        player.restoreNormalColor()
+    }
+    
+    /// Start the slowdown timer
+    private func startSlowdownTimer() {
+        stopSlowdownTimer()
+        
+        slowdownTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            self?.removeSlowdownEffect()
+        }
+    }
+    
+    /// Stop the slowdown timer
+    private func stopSlowdownTimer() {
+        slowdownTimer?.invalidate()
+        slowdownTimer = nil
+    }
+    
+    /// Check if player is currently slowed down
+    var isPlayerCurrentlySlowed: Bool {
+        return isPlayerSlowed
+    }
+    
+    // MARK: - Enemy Speed Management
+    
+    /// Get the current enemy movement speed (scaled by level)
+    private func getCurrentEnemyMovementSpeed() -> CGFloat {
+        return baseEnemyMovementSpeed * gameStateManager.enemySpeedMultiplier
+    }
+    
+    /// Get the enemy movement interval based on current speed
+    private func getEnemyMovementInterval() -> TimeInterval {
+        let speed = getCurrentEnemyMovementSpeed()
+        return 1.0 / speed
+    }
+    
+    /// Start enemy movement timer
+    private func startEnemyMovementTimer() {
+        stopEnemyMovementTimer()
+        
+        let interval = getEnemyMovementInterval()
+        enemyMovementTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            self?.updateEnemyMovement()
+        }
+    }
+    
+    /// Stop enemy movement timer
+    private func stopEnemyMovementTimer() {
+        enemyMovementTimer?.invalidate()
+        enemyMovementTimer = nil
+    }
+    
+    /// Update enemy movement (called by timer)
+    private func updateEnemyMovement() {
+        let enemies = getAllEnemies()
+        
+        for enemy in enemies {
+            moveEnemy(enemy)
+        }
     }
     
     // MARK: - Reset Functions
@@ -332,17 +468,13 @@ final class MovementSystem {
     /// Get the current player
     /// - Returns: Current player instance, or nil if not found
     private func getCurrentPlayer() -> Player? {
-        // This would be provided by the GameManager
-        // For now, we'll need to implement this based on how we access the player
-        return nil // TODO: Implement based on GameManager access
+        return gameManager?.currentPlayer
     }
     
     /// Get all enemies
     /// - Returns: Array of all enemy instances
     private func getAllEnemies() -> [Enemy] {
-        // This would be provided by the GameManager
-        // For now, we'll need to implement this based on how we access enemies
-        return [] // TODO: Implement based on GameManager access
+        return gameManager?.allEnemies ?? []
     }
     
     // MARK: - Public Interface
@@ -350,8 +482,8 @@ final class MovementSystem {
     /// Update the movement system (called each frame)
     /// - Parameter deltaTime: Time since last update
     func update(deltaTime: TimeInterval) {
-        // Move enemies periodically
-        // This could be based on a timer or frame counter
+        // Enemy movement is now handled by timer
+        // This method can be used for additional frame-based updates if needed
     }
     
     /// Handle input for player movement
@@ -364,18 +496,45 @@ final class MovementSystem {
         }
     }
     
+    /// Start the movement system (starts enemy movement timer)
+    func startMovementSystem() {
+        startEnemyMovementTimer()
+    }
+    
+    /// Stop the movement system (stops all timers)
+    func stopMovementSystem() {
+        stopPlayerMovement()
+        stopEnemyMovementTimer()
+    }
+    
     /// Pause movement system
     func pause() {
         stopPlayerMovement()
+        stopEnemyMovementTimer()
     }
     
     /// Resume movement system
     func resume() {
-        // Resume any paused movement
+        startEnemyMovementTimer()
     }
     
     /// Clean up resources
     func cleanup() {
         stopMovementTimer()
+        stopEnemyMovementTimer()
+    }
+    
+    /// Restart enemy movement timer (useful when speed changes)
+    func restartEnemyMovementTimer() {
+        startEnemyMovementTimer()
+    }
+    
+    // MARK: - GameStateManagerDelegate
+    
+    /// Called when enemy speed changes (e.g., level completion)
+    /// - Parameter multiplier: New enemy speed multiplier
+    func enemySpeedChanged(to multiplier: CGFloat) {
+        print("MovementSystem: Enemy speed changed to \(multiplier * 100)% of player speed")
+        restartEnemyMovementTimer()
     }
 }

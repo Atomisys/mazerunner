@@ -8,6 +8,11 @@ enum GameState: String, CaseIterable {
     case levelComplete = "levelComplete"
 }
 
+// MARK: - Game State Manager Delegate
+protocol GameStateManagerDelegate: AnyObject {
+    func enemySpeedChanged(to multiplier: CGFloat)
+}
+
 // MARK: - Game State Manager
 final class GameStateManager {
     
@@ -42,6 +47,9 @@ final class GameStateManager {
     
     /// Set of dug tunnel positions
     private(set) var dugTunnels: Set<CGPoint> = []
+    
+    /// Delegate to notify when enemy speed changes
+    weak var delegate: GameStateManagerDelegate?
     
     // MARK: - Initialization
     
@@ -173,6 +181,9 @@ final class GameStateManager {
         // Increase difficulty for next level
         enemySpeedMultiplier += 0.1
         print("Enemy speed increased to \(enemySpeedMultiplier * 100)% of player speed")
+        
+        // Notify delegate of speed change
+        delegate?.enemySpeedChanged(to: enemySpeedMultiplier)
     }
     
     /// Start a new level

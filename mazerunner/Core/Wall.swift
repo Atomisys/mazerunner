@@ -46,15 +46,19 @@ final class Wall: GameObject {
     /// Reference to the game state manager
     private let gameStateManager: GameStateManager
     
+    /// Reference to the movement system for slowdown effects
+    private weak var movementSystem: MovementSystem?
+    
     /// Digging effect node
     private var diggingEffectNode: SKSpriteNode?
     
     // MARK: - Initialization
     
-    init(wallType: WallType, gridSystem: GridSystem, gameStateManager: GameStateManager, gridPosition: CGPoint) {
+    init(wallType: WallType, gridSystem: GridSystem, gameStateManager: GameStateManager, gridPosition: CGPoint, movementSystem: MovementSystem? = nil) {
         self.wallType = wallType
         self.gridSystem = gridSystem
         self.gameStateManager = gameStateManager
+        self.movementSystem = movementSystem
         self.gridPosition = gridPosition
         
         // Create the wall sprite
@@ -107,6 +111,9 @@ final class Wall: GameObject {
         
         // Mark tunnel as dug
         gameStateManager.markTunnelDug(at: sprite.position)
+        
+        // Slow down player for digging
+        movementSystem?.slowPlayerForDigging()
         
         // Play digging sound (will be handled by AudioSystem)
         print("Wall dug! +10 points")
