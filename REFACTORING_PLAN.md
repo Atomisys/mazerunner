@@ -517,28 +517,28 @@ mazerunner/
   - [x] Implement level progression logic
 
 ### Phase 2: Core Objects (Week 2)
-- [ ] Refactor `Player.swift`
-  - [ ] Extract player logic from GameScene
-  - [ ] Implement grid position tracking
-  - [ ] Add movement input handling
-  - [ ] Maintain visual representation
-- [ ] Enhance `Enemy.swift`
-  - [ ] Add grid integration
-  - [ ] Implement grid-based movement
-  - [ ] Maintain directional sprites
-  - [ ] Add AI pathfinding
-- [ ] Create `Cherry.swift`
-  - [ ] Extract cherry logic from GameScene
-  - [ ] Implement collection behavior
-  - [ ] Add visual effects
-- [ ] Create `Wall.swift`
-  - [ ] Extract wall logic from GameScene
-  - [ ] Implement wall types (regular vs border)
-  - [ ] Add digging mechanics
-- [ ] Create `GameManager.swift`
-  - [ ] Coordinate between different systems
-  - [ ] Handle game flow
-  - [ ] Manage object lifecycle
+- [x] Refactor `Player.swift`
+  - [x] Extract player logic from GameScene
+  - [x] Implement grid position tracking
+  - [x] Add movement input handling
+  - [x] Maintain visual representation
+- [x] Enhance `Enemy.swift`
+  - [x] Add grid integration
+  - [x] Implement grid-based movement
+  - [x] Maintain directional sprites
+  - [x] Add AI pathfinding
+- [x] Create `Cherry.swift`
+  - [x] Extract cherry logic from GameScene
+  - [x] Implement collection behavior
+  - [x] Add visual effects
+- [x] Create `Wall.swift`
+  - [x] Extract wall logic from GameScene
+  - [x] Implement wall types (regular vs border)
+  - [x] Add digging mechanics
+- [x] Create `GameManager.swift`
+  - [x] Coordinate between different systems
+  - [x] Handle game flow
+  - [x] Manage object lifecycle
 
 ### Phase 3: Systems (Week 3)
 - [ ] Create `MovementSystem.swift`
