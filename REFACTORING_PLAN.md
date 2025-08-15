@@ -541,30 +541,30 @@ mazerunner/
   - [x] Manage object lifecycle
 
 ### Phase 3: Systems (Week 3)
-- [ ] Create `MovementSystem.swift`
-  - [ ] Extract movement logic from GameScene
-  - [ ] Implement grid-based movement
-  - [ ] Add pathfinding for enemies
-  - [ ] Handle movement validation
-- [ ] Create `CollisionSystem.swift`
-  - [ ] Extract collision detection from GameScene
-  - [ ] Implement grid-based collisions
-  - [ ] Handle cherry collection
-  - [ ] Manage enemy-player collisions
-- [ ] Create `AudioSystem.swift`
-  - [ ] Centralize audio management
-  - [ ] Coordinate sound effects
-  - [ ] Replace direct SoundPlayer usage
-- [ ] Create `UISystem.swift`
-  - [ ] Extract UI logic from GameScene
-  - [ ] Manage score and lives display
-  - [ ] Handle debug information
-  - [ ] Manage game messages
-- [ ] Create `InputManager.swift`
-  - [ ] Extract input handling from GameScene
-  - [ ] Implement touch handling
-  - [ ] Add direction calculation
-  - [ ] Manage input state
+- [x] Create `MovementSystem.swift`
+  - [x] Extract movement logic from GameScene
+  - [x] Implement grid-based movement
+  - [x] Add pathfinding for enemies
+  - [x] Handle movement validation
+- [x] Create `CollisionSystem.swift`
+  - [x] Extract collision detection from GameScene
+  - [x] Implement grid-based collisions
+  - [x] Handle cherry collection
+  - [x] Manage enemy-player collisions
+- [x] Create `AudioSystem.swift`
+  - [x] Centralize audio management
+  - [x] Coordinate sound effects
+  - [x] Replace direct SoundPlayer usage
+- [x] Create `UISystem.swift`
+  - [x] Extract UI logic from GameScene
+  - [x] Manage score and lives display
+  - [x] Handle debug information
+  - [x] Manage game messages
+- [x] Create `InputManager.swift`
+  - [x] Extract input handling from GameScene
+  - [x] Implement touch handling
+  - [x] Add direction calculation
+  - [x] Manage input state
 
 ### Phase 4: Integration and Polish (Week 4)
 - [ ] Update `GameScene.swift`
@@ -593,8 +593,8 @@ mazerunner/
   - [ ] Final testing and bug fixes
 
 ### Overall Progress
-- [ ] Phase 1 Complete
-- [ ] Phase 2 Complete
-- [ ] Phase 3 Complete
+- [x] Phase 1 Complete
+- [x] Phase 2 Complete
+- [x] Phase 3 Complete
 - [ ] Phase 4 Complete
 - [ ] **REFACTORING COMPLETE**
