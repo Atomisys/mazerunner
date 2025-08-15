@@ -443,25 +443,78 @@ This approach allows us to move faster through the refactoring while still maint
 - **Memory Management**: Ensure proper cleanup of game objects
 - **Rendering Optimization**: Minimize unnecessary sprite updates
 
+## Project Directory Structure
+
+### Proposed Organization
+```
+mazerunner/
+├── Foundation/           # Phase 1 files
+│   ├── GridSystem.swift
+│   ├── GameGrid.swift
+│   ├── GameObject.swift
+│   └── GameState.swift
+├── Core/                 # Phase 2 files (when we create them)
+│   ├── Player.swift
+│   ├── Enemy.swift (enhanced)
+│   ├── Cherry.swift
+│   ├── Wall.swift
+│   └── GameManager.swift
+├── Systems/              # Phase 3 files (when we create them)
+│   ├── MovementSystem.swift
+│   ├── CollisionSystem.swift
+│   ├── AudioSystem.swift
+│   ├── UISystem.swift
+│   └── InputManager.swift
+├── Managers/             # Phase 4 files (when we create them)
+│   ├── LevelManager.swift
+│   ├── VisualEffectsSystem.swift
+│   └── MazeGenerator.swift (enhanced)
+├── Legacy/               # Original files (to be cleaned up)
+│   ├── GameScene.swift (original)
+│   ├── Enemy.swift (original)
+│   └── SoundPlayer.swift
+├── Resources/            # Assets
+│   ├── *.mp3
+│   ├── *.png
+│   └── *.sks
+└── UI/                   # UI-related files
+    ├── GameViewController.swift
+    ├── AppDelegate.swift
+    └── Base.lproj/
+```
+
+### Benefits of this organization:
+1. **Clear Separation**: Each phase has its own directory
+2. **Easy Navigation**: Developers can quickly find related files
+3. **Scalability**: Easy to add new files to appropriate directories
+4. **Legacy Tracking**: Original files are preserved until fully replaced
+5. **Logical Grouping**: Related functionality is grouped together
+
+### Implementation Notes:
+- Files will be moved to appropriate directories as each phase is completed
+- Legacy files will be moved to Legacy/ directory when replaced
+- Xcode project will be updated to reflect new structure
+- Import statements may need updating when files are moved
+
 ## Progress Tracking
 
 ### Phase 1: Foundation (Week 1)
-- [ ] Create `GridSystem.swift`
-  - [ ] Extract position conversion utilities from GameScene
-  - [ ] Implement grid validation and boundary checking
-  - [ ] Add grid-based collision detection helpers
-- [ ] Create `GameGrid.swift`
-  - [ ] Implement 2D grid representation
-  - [ ] Add methods to query and modify grid state
-  - [ ] Create grid-based pathfinding utilities
-- [ ] Create `GameObject.swift` protocol
-  - [ ] Define base interface for all game objects
-  - [ ] Add grid position tracking
-  - [ ] Include sprite management
-- [ ] Create `GameState.swift`
-  - [ ] Extract game state enum and related data
-  - [ ] Add score, lives, cherries tracking
-  - [ ] Implement level progression logic
+- [x] Create `GridSystem.swift`
+  - [x] Extract position conversion utilities from GameScene
+  - [x] Implement grid validation and boundary checking
+  - [x] Add grid-based collision detection helpers
+- [x] Create `GameGrid.swift`
+  - [x] Implement 2D grid representation
+  - [x] Add methods to query and modify grid state
+  - [x] Create grid-based pathfinding utilities
+- [x] Create `GameObject.swift` protocol
+  - [x] Define base interface for all game objects
+  - [x] Add grid position tracking
+  - [x] Include sprite management
+- [x] Create `GameState.swift`
+  - [x] Extract game state enum and related data
+  - [x] Add score, lives, cherries tracking
+  - [x] Implement level progression logic
 
 ### Phase 2: Core Objects (Week 2)
 - [ ] Refactor `Player.swift`
